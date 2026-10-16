@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RLG Lead Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>RLG Lead Dashboard</h1>
+      <p class="sub">WhatConverts leads cross-referenced with Google Ads campaigns and keywords</p>
+    </div>
+    <div class="data-actions">
+      <button id="syncBtn" class="btn primary" hidden>Sync from APIs</button>
+      <label class="btn">WhatConverts CSV
+        <input type="file" id="wcFile" accept=".csv,.tsv,.txt" multiple hidden>
+      </label>
+      <label class="btn">Google Ads CSV
+        <input type="file" id="adsFile" accept=".csv,.tsv,.txt" multiple hidden>
+      </label>
+      <button id="sampleBtn" class="btn ghost">Load sample data</button>
+      <button id="clearBtn" class="btn ghost">Clear</button>
+    </div>
+  </header>
+
+  <div id="dataStatus" class="data-status"></div>
+  <div id="messages"></div>
+
+  <section class="filters">
+    <label>Campaign
+      <input type="search" id="campaignQ" placeholder="Search campaigns…">
+    </label>
+    <label>Keyword
+      <input type="search" id="keywordQ" placeholder="Search keywords…">
+    </label>
+    <label>From <input type="date" id="from"></label>
+    <label>To <input type="date" id="to"></label>
+    <label class="check"><input type="checkbox" id="googleOnly" checked> Google Ads leads only</label>
+    <label class="check"><input type="checkbox" id="excludeSpam" checked> Exclude spam &amp; duplicates</label>
+  </section>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Campaigns</h2>
+      <div class="card-tools">
+        <button id="expandAll" class="btn small ghost">Expand all</button>
+        <button id="exportBtn" class="btn small">Export CSV</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="report">
+        <thead>
+          <tr>
+            <th class="name">Campaign / Keyword</th>
+            <th>Spend</th>
+            <th>Clicks</th>
+            <th title="Conversions reported by Google Ads">Ads conv.</th>
+            <th title="Leads recorded in WhatConverts">WC leads</th>
+            <th>Calls</th>
+            <th>Forms</th>
+            <th>Chat</th>
+            <th>Quotable</th>
+            <th>Cost / lead</th>
+            <th title="WhatConverts leads minus Google Ads conversions">Gap</th>
+            <th>Sales value</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="empty" class="empty">Load a WhatConverts leads export and a Google Ads campaign or keyword report to get started — or click <b>Load sample data</b>.</p>
+    </div>
+  </section>
+
+  <section class="card" id="leadsCard" hidden>
+    <div class="card-head">
+      <h2 id="leadsTitle">Leads</h2>
+      <button id="closeLeads" class="btn small ghost">Close</button>
+    </div>
+    <div class="table-wrap">
+      <table id="leads">
+        <thead>
+          <tr><th>Date</th><th>Type</th><th>Contact</th><th>Campaign</th><th>Keyword</th><th>Source / medium</th><th>Status</th><th>Quotable</th><th>Sales value</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "rlg-lead-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cross-reference WhatConverts leads with Google Ads campaigns and keywords",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}

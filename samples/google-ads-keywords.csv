@@ -1,0 +1,273 @@
+Search keyword report
+September 16, 2026 - October 15, 2026
+Day,Campaign,Campaign ID,Ad group,Keyword,Match type,Impr.,Clicks,Cost,Conversions
+2026-09-16,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,40,4,118.28,0
+2026-09-17,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,258,18,561.10,0
+2026-09-18,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,266,19,862.23,1
+2026-09-19,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,112,6,277.90,0
+2026-09-20,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,56,4,146.86,0
+2026-09-21,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,282,11,423.74,0
+2026-09-22,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,246,20,821.95,0
+2026-09-23,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,312,18,565.48,0
+2026-09-24,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,139,5,149.53,0
+2026-09-25,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,128,13,523.83,0
+2026-09-26,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,303,10,289.40,0
+2026-09-27,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,192,12,308.62,0
+2026-09-28,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,56,3,95.29,0
+2026-09-29,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,317,22,541.68,2
+2026-09-30,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,149,9,281.73,0
+2026-10-01,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,224,10,542.60,0
+2026-10-02,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,298,24,"1,040.98",1
+2026-10-03,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,246,25,846.72,2
+2026-10-04,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,216,12,374.69,1
+2026-10-05,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,303,11,558.44,1
+2026-10-06,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,86,3,173.54,0
+2026-10-07,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,229,9,326.56,0
+2026-10-08,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,81,8,427.06,0
+2026-10-09,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,305,31,"1,501.80",2
+2026-10-10,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,114,4,72.25,0
+2026-10-11,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,109,9,338.17,0
+2026-10-12,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,111,11,301.47,1
+2026-10-13,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,75,5,90.59,0
+2026-10-14,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,231,23,433.32,2
+2026-10-15,Search - Personal Injury,20145530011,Ad group 1,car accident lawyer,Phrase,330,24,"1,084.20",2
+2026-09-16,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,102,7,140.66,0
+2026-09-17,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,250,21,796.48,2
+2026-09-18,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,315,12,546.17,0
+2026-09-19,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,51,5,262.27,0
+2026-09-20,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,326,29,"1,008.74",1
+2026-09-21,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,304,18,493.02,1
+2026-09-22,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,207,12,514.33,0
+2026-09-23,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,140,12,418.92,1
+2026-09-24,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,335,36,"1,558.67",1
+2026-09-25,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,99,8,187.32,0
+2026-09-26,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,207,18,"1,004.95",2
+2026-09-27,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,174,7,311.53,0
+2026-09-28,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,208,14,676,1
+2026-09-29,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,47,2,79.34,0
+2026-09-30,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,256,13,356.57,0
+2026-10-01,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,168,6,293.49,0
+2026-10-02,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,314,32,"1,447.56",2
+2026-10-03,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,268,20,939.23,0
+2026-10-04,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,51,2,42.42,0
+2026-10-05,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,65,1,42.20,0
+2026-10-06,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,97,3,78.27,0
+2026-10-07,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,112,7,404.31,0
+2026-10-08,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,242,22,745.26,2
+2026-10-09,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,109,10,569.75,1
+2026-10-10,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,192,7,184.84,0
+2026-10-11,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,91,3,86.73,0
+2026-10-12,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,206,14,808.54,1
+2026-10-13,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,134,4,72.98,0
+2026-10-14,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,67,3,164.89,0
+2026-10-15,Search - Personal Injury,20145530011,Ad group 1,personal injury attorney,Exact,269,17,887.36,0
+2026-09-16,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,280,23,940.39,1
+2026-09-17,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,189,13,529.06,0
+2026-09-18,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,239,19,896.02,0
+2026-09-19,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,293,31,"1,101.20",1
+2026-09-20,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,332,19,402.20,1
+2026-09-21,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,252,22,"1,236.56",2
+2026-09-22,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,111,10,221.65,0
+2026-09-23,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,280,22,"1,022.09",1
+2026-09-24,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,301,22,"1,164.86",1
+2026-09-25,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,170,10,255.01,0
+2026-09-26,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,109,11,559.71,1
+2026-09-27,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,303,11,333.37,0
+2026-09-28,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,40,1,33.89,1
+2026-09-29,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,309,13,344.27,0
+2026-09-30,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,249,10,226.73,0
+2026-10-01,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,44,4,166.65,0
+2026-10-02,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,78,4,186.37,0
+2026-10-03,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,204,15,736.47,0
+2026-10-04,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,260,20,440.21,1
+2026-10-05,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,107,8,224.29,1
+2026-10-06,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,228,21,579.16,0
+2026-10-07,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,55,4,137.08,0
+2026-10-08,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,237,22,488.10,0
+2026-10-09,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,190,18,629.95,0
+2026-10-10,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,277,24,"1,303.51",2
+2026-10-11,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,255,10,230.10,0
+2026-10-12,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,326,11,231.86,1
+2026-10-13,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,300,31,901.53,2
+2026-10-14,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,180,13,307.62,1
+2026-10-15,Search - Personal Injury,20145530011,Ad group 1,injury lawyer near me,Broad,108,3,59.33,1
+2026-09-16,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,180,17,801.12,1
+2026-09-17,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,156,12,679.31,0
+2026-09-18,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,328,28,"1,179.77",2
+2026-09-19,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,59,5,219.34,0
+2026-09-20,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,203,12,453.33,2
+2026-09-21,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,63,3,95.36,0
+2026-09-22,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,231,9,180.79,1
+2026-09-23,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,300,10,487.26,1
+2026-09-24,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,312,29,535.46,2
+2026-09-25,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,232,14,270.60,1
+2026-09-26,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,266,13,679.93,0
+2026-09-27,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,135,9,269.60,1
+2026-09-28,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,301,25,948.47,1
+2026-09-29,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,283,25,"1,420.35",2
+2026-09-30,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,253,14,735.84,1
+2026-10-01,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,237,22,806.90,1
+2026-10-02,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,52,2,51.64,1
+2026-10-03,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,283,22,"1,147.03",1
+2026-10-04,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,102,7,254.72,0
+2026-10-05,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,201,18,696.68,1
+2026-10-06,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,113,9,439.80,2
+2026-10-07,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,224,16,888.46,1
+2026-10-08,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,220,16,694.94,2
+2026-10-09,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,102,4,125.36,0
+2026-10-10,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,302,24,805.69,1
+2026-10-11,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,77,3,60.37,0
+2026-10-12,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,152,5,216.84,0
+2026-10-13,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,177,6,309.66,0
+2026-10-14,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,131,5,130.58,0
+2026-10-15,Search - Truck Accidents,20145530012,Ad group 1,truck accident attorney,Exact,99,7,287.86,0
+2026-09-16,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,275,19,"1,000.88",2
+2026-09-17,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,227,20,"1,072.83",1
+2026-09-18,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,127,13,253.46,1
+2026-09-19,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,296,30,"1,408.11",2
+2026-09-20,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,200,18,457.56,0
+2026-09-21,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,244,18,"1,008.76",2
+2026-09-22,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,260,18,766.17,1
+2026-09-23,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,53,4,228.95,0
+2026-09-24,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,243,18,481.20,1
+2026-09-25,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,171,5,262.57,0
+2026-09-26,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,332,18,859.92,0
+2026-09-27,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,211,16,414.78,1
+2026-09-28,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,169,5,203.52,0
+2026-09-29,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,292,10,302.42,0
+2026-09-30,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,166,9,266.38,1
+2026-10-01,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,169,13,496.11,0
+2026-10-02,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,169,13,700.88,0
+2026-10-03,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,178,17,973.08,1
+2026-10-04,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,228,7,206.22,1
+2026-10-05,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,73,3,133.97,0
+2026-10-06,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,121,4,193.64,0
+2026-10-07,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,227,20,371.46,0
+2026-10-08,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,313,28,"1,572.16",2
+2026-10-09,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,51,5,185.33,0
+2026-10-10,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,197,19,879.96,0
+2026-10-11,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,42,1,42.67,0
+2026-10-12,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,66,3,102.64,0
+2026-10-13,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,242,19,461.19,0
+2026-10-14,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,339,26,"1,218.54",1
+2026-10-15,Search - Truck Accidents,20145530012,Ad group 1,18 wheeler accident lawyer,Phrase,87,5,229.39,0
+2026-09-16,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,179,19,682.35,1
+2026-09-17,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,70,3,76.13,0
+2026-09-18,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,140,15,594.76,1
+2026-09-19,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,192,5,198.36,0
+2026-09-20,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,170,7,144.72,0
+2026-09-21,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,170,6,307.87,1
+2026-09-22,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,255,25,"1,119.35",1
+2026-09-23,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,122,10,366.35,2
+2026-09-24,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,66,2,77.27,0
+2026-09-25,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,106,6,265.07,0
+2026-09-26,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,113,9,432.09,0
+2026-09-27,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,298,13,378.44,0
+2026-09-28,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,161,12,411.25,0
+2026-09-29,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,303,29,995.22,1
+2026-09-30,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,261,27,743.87,1
+2026-10-01,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,254,19,834.34,0
+2026-10-02,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,94,6,214.02,0
+2026-10-03,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,264,22,934.46,2
+2026-10-04,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,267,19,367.62,1
+2026-10-05,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,43,4,178.72,0
+2026-10-06,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,298,30,"1,640.76",1
+2026-10-07,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,148,12,258.65,2
+2026-10-08,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,131,7,214.29,0
+2026-10-09,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,43,2,69.39,0
+2026-10-10,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,286,9,321.44,0
+2026-10-11,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,230,9,204.14,0
+2026-10-12,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,53,2,89.14,0
+2026-10-13,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,330,33,"1,331.96",1
+2026-10-14,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,250,13,460.95,1
+2026-10-15,Search - Workers Comp,20145530013,Ad group 1,workers compensation lawyer,Phrase,98,2,53.59,0
+2026-09-16,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,236,7,389.31,2
+2026-09-17,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,257,21,948.94,1
+2026-09-18,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,57,2,49.24,0
+2026-09-19,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,138,6,115.78,1
+2026-09-20,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,331,13,502.14,0
+2026-09-21,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,78,8,360,0
+2026-09-22,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,321,27,645.13,1
+2026-09-23,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,122,5,171.06,0
+2026-09-24,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,232,19,959.91,0
+2026-09-25,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,201,6,190.44,0
+2026-09-26,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,239,21,"1,076.18",1
+2026-09-27,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,148,10,185.80,0
+2026-09-28,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,40,2,75.23,0
+2026-09-29,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,86,6,152.47,0
+2026-09-30,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,70,2,97.61,0
+2026-10-01,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,282,27,"1,208.38",1
+2026-10-02,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,155,15,494.49,2
+2026-10-03,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,64,2,38.41,0
+2026-10-04,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,242,11,200.78,1
+2026-10-05,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,330,33,"1,675.32",1
+2026-10-06,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,206,16,331.04,1
+2026-10-07,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,197,14,584.22,0
+2026-10-08,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,191,16,505.69,0
+2026-10-09,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,44,1,44.72,0
+2026-10-10,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,100,3,79.89,1
+2026-10-11,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,242,19,654.50,0
+2026-10-12,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,51,4,211.32,0
+2026-10-13,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,142,6,261.05,2
+2026-10-14,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,238,8,324.53,0
+2026-10-15,Search - Workers Comp,20145530013,Ad group 1,workplace injury attorney,Broad,46,4,111.08,0
+2026-09-16,Search - Brand,20145530014,Ad group 1,rlg law,Exact,50,5,19.35,0
+2026-09-17,Search - Brand,20145530014,Ad group 1,rlg law,Exact,224,12,42.61,1
+2026-09-18,Search - Brand,20145530014,Ad group 1,rlg law,Exact,286,30,138.92,2
+2026-09-19,Search - Brand,20145530014,Ad group 1,rlg law,Exact,190,13,30.91,0
+2026-09-20,Search - Brand,20145530014,Ad group 1,rlg law,Exact,112,6,23,0
+2026-09-21,Search - Brand,20145530014,Ad group 1,rlg law,Exact,146,5,12.57,0
+2026-09-22,Search - Brand,20145530014,Ad group 1,rlg law,Exact,54,5,20.98,0
+2026-09-23,Search - Brand,20145530014,Ad group 1,rlg law,Exact,290,10,38.30,0
+2026-09-24,Search - Brand,20145530014,Ad group 1,rlg law,Exact,79,5,15.44,0
+2026-09-25,Search - Brand,20145530014,Ad group 1,rlg law,Exact,238,25,52.89,1
+2026-09-26,Search - Brand,20145530014,Ad group 1,rlg law,Exact,292,23,53.81,1
+2026-09-27,Search - Brand,20145530014,Ad group 1,rlg law,Exact,263,21,58.63,2
+2026-09-28,Search - Brand,20145530014,Ad group 1,rlg law,Exact,167,17,67.78,0
+2026-09-29,Search - Brand,20145530014,Ad group 1,rlg law,Exact,313,30,126.40,1
+2026-09-30,Search - Brand,20145530014,Ad group 1,rlg law,Exact,265,23,81.14,1
+2026-10-01,Search - Brand,20145530014,Ad group 1,rlg law,Exact,217,9,41.82,0
+2026-10-02,Search - Brand,20145530014,Ad group 1,rlg law,Exact,102,6,14.53,0
+2026-10-03,Search - Brand,20145530014,Ad group 1,rlg law,Exact,105,6,27.67,0
+2026-10-04,Search - Brand,20145530014,Ad group 1,rlg law,Exact,262,9,36.13,0
+2026-10-05,Search - Brand,20145530014,Ad group 1,rlg law,Exact,40,3,9.61,0
+2026-10-06,Search - Brand,20145530014,Ad group 1,rlg law,Exact,46,2,6.76,0
+2026-10-07,Search - Brand,20145530014,Ad group 1,rlg law,Exact,218,17,35.79,2
+2026-10-08,Search - Brand,20145530014,Ad group 1,rlg law,Exact,326,12,32.46,0
+2026-10-09,Search - Brand,20145530014,Ad group 1,rlg law,Exact,124,13,32.21,1
+2026-10-10,Search - Brand,20145530014,Ad group 1,rlg law,Exact,163,17,47.77,1
+2026-10-11,Search - Brand,20145530014,Ad group 1,rlg law,Exact,166,9,42.49,0
+2026-10-12,Search - Brand,20145530014,Ad group 1,rlg law,Exact,253,21,63.34,0
+2026-10-13,Search - Brand,20145530014,Ad group 1,rlg law,Exact,259,7,24.96,1
+2026-10-14,Search - Brand,20145530014,Ad group 1,rlg law,Exact,145,12,41.63,1
+2026-10-15,Search - Brand,20145530014,Ad group 1,rlg law,Exact,310,28,99.09,1
+2026-09-16,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,245,23,68.18,1
+2026-09-17,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,252,22,97.97,1
+2026-09-18,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,69,5,16.13,0
+2026-09-19,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,87,7,20.63,0
+2026-09-20,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,177,5,19.97,1
+2026-09-21,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,70,2,5.10,0
+2026-09-22,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,249,24,62.80,1
+2026-09-23,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,58,5,22.60,0
+2026-09-24,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,323,34,154.97,1
+2026-09-25,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,193,21,57.83,0
+2026-09-26,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,85,9,29.14,0
+2026-09-27,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,51,2,7.03,0
+2026-09-28,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,299,17,62.02,0
+2026-09-29,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,189,20,79.86,1
+2026-09-30,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,144,7,14.65,0
+2026-10-01,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,146,8,35.17,0
+2026-10-02,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,306,12,32.49,0
+2026-10-03,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,119,9,29.37,0
+2026-10-04,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,191,10,23.73,0
+2026-10-05,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,189,17,39.60,0
+2026-10-06,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,83,8,25.70,0
+2026-10-07,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,200,13,48.02,1
+2026-10-08,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,312,20,83.27,2
+2026-10-09,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,179,11,54.04,1
+2026-10-10,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,103,3,9.91,0
+2026-10-11,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,125,13,33.89,1
+2026-10-12,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,224,23,103.48,1
+2026-10-13,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,116,8,21.10,0
+2026-10-14,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,232,14,61.08,0
+2026-10-15,Search - Brand,20145530014,Ad group 1,rlg attorneys,Exact,333,11,49.76,0
