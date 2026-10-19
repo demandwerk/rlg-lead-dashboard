@@ -1,5 +1,6 @@
 // Shared data logic: parsing exports, normalizing records, and joining
-// WhatConverts leads to Google Ads campaigns/keywords.
+// WhatConverts leads to Google Ads campaigns/keywords, plus GA4 sessions and
+// Search Console queries.
 // Used by the browser (app.js) and by the server (server.js) and tests.
 
 // ---------- CSV ----------
@@ -177,6 +178,32 @@ export function adsRecord(o) {
   };
 }
 
+// ---------- Google Analytics 4 / Search Console ----------
+
+// One GA4 row per date × source × medium × session campaign.
+export function gaRecord(o) {
+  return {
+    date: parseDate(o.date),
+    source: String(o.source || '').trim(),
+    medium: String(o.medium || '').trim(),
+    campaign: isEmpty(o.campaign) ? '' : String(o.campaign).trim(),
+    sessions: parseNumber(o.sessions),
+    engagedSessions: parseNumber(o.engagedSessions),
+    keyEvents: parseNumber(o.keyEvents),
+  };
+}
+
+// One Search Console row per date × query.
+export function gscRecord(o) {
+  return {
+    date: parseDate(o.date),
+    query: String(o.query || '').trim(),
+    clicks: parseNumber(o.clicks),
+    impressions: parseNumber(o.impressions),
+    position: parseNumber(o.position),
+  };
+}
+
 // ---------- WhatConverts ----------
 
 const WC_FIELDS = {
@@ -243,22 +270,30 @@ export function parseWhatConvertsCSV(text) {
   });
 }
 
+const isGooglePaid = (source, medium) =>
+  source.toLowerCase().includes('google') && /^(cpc|ppc|paid|paid search|paidsearch|paid_search|sem)$/.test(medium.toLowerCase());
+
 // Is this lead from Google Ads paid search?
 export function isGoogleAdsLead(lead) {
-  if (lead.gclid) return true;
-  const src = lead.source.toLowerCase();
-  const med = lead.medium.toLowerCase();
-  return src.includes('google') && /^(cpc|ppc|paid|paid search|paidsearch|paid_search|sem)$/.test(med);
+  return !!lead.gclid || isGooglePaid(lead.source, lead.medium);
 }
+
+export const isGoogleOrganicLead = lead =>
+  !lead.gclid && lead.source.toLowerCase().includes('google') && lead.medium.toLowerCase() === 'organic';
 
 // ---------- Join ----------
 
 const emptyAds = () => ({ impressions: 0, clicks: 0, cost: 0, conversions: 0, convValue: 0 });
+const emptyGa = () => ({ sessions: 0, engagedSessions: 0, keyEvents: 0 });
 const emptyWc = () => ({ leads: 0, phone: 0, form: 0, chat: 0, other: 0, quotable: 0, quoteValue: 0, salesValue: 0, items: [] });
 
 function addAds(t, r) {
   t.impressions += r.impressions; t.clicks += r.clicks; t.cost += r.cost;
   t.conversions += r.conversions; t.convValue += r.convValue;
+}
+
+function addGa(t, r) {
+  t.sessions += r.sessions; t.engagedSessions += r.engagedSessions; t.keyEvents += r.keyEvents;
 }
 
 function addWc(t, l) {
@@ -299,10 +334,11 @@ export const inRange =(date, from, to) =>
  * @param {Array} p.adsCampaigns  campaign-level ads rows
  * @param {Array} p.adsKeywords   keyword-level ads rows
  * @param {Array} p.leads         WhatConverts lead records (wcRecord)
+ * @param {Array} p.ga            GA4 session rows (gaRecord), joined by campaign name
  * @param {object} p.options      { from, to, googleOnly, excludeSpam }
  * @returns {{ campaigns: Array, totals: object, unattributed: number }}
  */
-export function buildReport({ adsCampaigns = [], adsKeywords = [], leads = [], options = {} }) {
+export function buildReport({ adsCampaigns = [], adsKeywords = [], leads = [], ga = [], options = {} }) {
   const { from = '', to = '', googleOnly = true, excludeSpam = true } = options;
   const campaigns = new Map();
   const idToKey = new Map();
@@ -312,7 +348,7 @@ export function buildReport({ adsCampaigns = [], adsKeywords = [], leads = [], o
     if (!campaigns.has(key)) {
       campaigns.set(key, {
         key, name: name || '(no campaign)', inAds: false,
-        ads: emptyAds(), wc: emptyWc(), keywords: new Map(),
+        ads: emptyAds(), wc: emptyWc(), ga: emptyGa(), keywords: new Map(),
       });
     }
     const c = campaigns.get(key);
@@ -385,6 +421,15 @@ export function buildReport({ adsCampaigns = [], adsKeywords = [], leads = [], o
     addWc(matchKeyword(c, l.keyword).wc, l);
   }
 
+  // GA4 sessions attach to campaigns already known from Ads or WhatConverts;
+  // GA-only campaign names (newsletters, referrals) would just add noise.
+  for (const r of ga) {
+    if (!inRange(r.date, from, to)) continue;
+    if (googleOnly && !isGooglePaid(r.source, r.medium)) continue;
+    const c = campaigns.get(normCampaign(idToKey.get(r.campaign) || r.campaign));
+    if (c) addGa(c.ga, r);
+  }
+
   const out = [...campaigns.values()].map(c => {
     const keywords = [...c.keywords.values()]
       .map(k => finish({ ...k, matchTypes: [...k.matchTypes], adGroups: [...k.adGroups], searchTerms: [...k.searchTerms] }))
@@ -392,9 +437,10 @@ export function buildReport({ adsCampaigns = [], adsKeywords = [], leads = [], o
     return finish({ ...c, keywords });
   }).sort((x, y) => y.wc.leads - x.wc.leads || y.ads.cost - x.ads.cost);
 
-  const totals = finish({ ads: emptyAds(), wc: emptyWc() });
+  const totals = finish({ ads: emptyAds(), wc: emptyWc(), ga: emptyGa() });
   for (const c of out) {
     addAds(totals.ads, c.ads);
+    addGa(totals.ga, c.ga);
     for (const l of c.wc.items) addWc(totals.wc, l);
   }
   finish(totals);
@@ -413,22 +459,68 @@ export function filterReport(report, { campaign = '', keyword = '' } = {}) {
     const kws = c.keywords.filter(k => k.keyword.includes(kq) || k.searchTerms.some(t => t.includes(kq)));
     if (!kws.length) continue;
     // When searching by keyword, the campaign row shows only the matching keywords' totals.
-    const sum = { ads: emptyAds(), wc: emptyWc() };
+    // GA4 has no keyword split, so its campaign figures drop out here.
+    const sum = { ads: emptyAds(), wc: emptyWc(), ga: null };
     for (const k of kws) {
       addAds(sum.ads, k.ads);
       for (const l of k.wc.items) addWc(sum.wc, l);
     }
-    campaigns.push(finish({ ...c, ads: sum.ads, wc: sum.wc, keywords: kws, keywordFiltered: true }));
+    campaigns.push(finish({ ...c, ads: sum.ads, wc: sum.wc, ga: sum.ga, keywords: kws, keywordFiltered: true }));
   }
   return campaigns;
 }
 
 /** Totals across a list of campaign rows. */
 export function sumRows(rows) {
-  const t = { ads: emptyAds(), wc: emptyWc() };
+  const t = { ads: emptyAds(), wc: emptyWc(), ga: emptyGa() };
   for (const r of rows) {
     addAds(t.ads, r.ads);
+    if (r.ga) addGa(t.ga, r.ga);
     for (const l of r.wc.items) addWc(t.wc, l);
   }
   return finish(t);
+}
+
+/** Site-wide GA4 totals for the date range, across all channels. */
+export function gaSiteTotals(ga, { from = '', to = '' } = {}) {
+  const t = emptyGa();
+  for (const r of ga) if (inRange(r.date, from, to)) addGa(t, r);
+  return t;
+}
+
+/**
+ * Search Console queries for the date range, each flagged with the Google Ads
+ * keyword it overlaps (same normalized text), so paid and organic sit side by side.
+ */
+export function organicQueries({ gsc = [], adsKeywords = [], leads = [], options = {}, keyword = '' }) {
+  const { from = '', to = '', excludeSpam = true } = options;
+  const kq = keyword.trim().toLowerCase();
+  const paid = new Map();
+  for (const r of adsKeywords) {
+    if (!inRange(r.date, from, to)) continue;
+    const key = normKeyword(r.keyword);
+    if (!paid.has(key)) paid.set(key, emptyAds());
+    addAds(paid.get(key), r);
+  }
+  const queries = new Map();
+  const totals = { clicks: 0, impressions: 0, posWeighted: 0 };
+  for (const r of gsc) {
+    if (!inRange(r.date, from, to)) continue;
+    totals.clicks += r.clicks; totals.impressions += r.impressions; totals.posWeighted += r.position * r.impressions;
+    const key = normKeyword(r.query);
+    if (kq && !key.includes(kq)) continue;
+    if (!queries.has(key)) queries.set(key, { query: key, clicks: 0, impressions: 0, posWeighted: 0 });
+    const q = queries.get(key);
+    q.clicks += r.clicks; q.impressions += r.impressions; q.posWeighted += r.position * r.impressions;
+  }
+  const withRates = q => ({
+    ...q,
+    ctr: q.impressions ? q.clicks / q.impressions : null,
+    position: q.impressions ? q.posWeighted / q.impressions : null,
+  });
+  const rows = [...queries.values()].map(q => ({ ...withRates(q), paid: paid.get(q.query) || null }))
+    .sort((a, b) => b.clicks - a.clicks || b.impressions - a.impressions);
+  const organicLeads = leads.filter(l =>
+    isGoogleOrganicLead(l) && inRange(l.date, from, to) && !(excludeSpam && (l.spam || l.duplicate))).length;
+  return { rows, totals: { ...withRates(totals), organicLeads } };
 }

@@ -1,12 +1,14 @@
 # RLG Lead Dashboard
 
-Search Google Ads campaigns and keywords, and see the **WhatConverts** leads (calls, forms, chats) each one produced, side by side with Google Ads spend, clicks and conversions.
+Search Google Ads campaigns and keywords, and see the **WhatConverts** leads (calls, forms, chats) each one produced, side by side with Google Ads spend, clicks and conversions, **Google Analytics 4** sessions and key events, and **Search Console** organic queries.
 
 - **Search** by campaign and/or keyword (keyword search also matches the search terms WhatConverts captured).
 - **Per campaign → per keyword**: spend, clicks, Google Ads conversions, WhatConverts leads (split into calls, forms and chat), quotable leads, cost per lead, sales value.
 - **Gap column**: WhatConverts leads minus Google Ads conversions, so you can see where Ads under- or over-reports.
 - Click any lead count to see the individual leads behind it.
 - Flags campaigns and keywords that have WhatConverts leads but **no match in Google Ads** (renamed or paused campaigns, broken UTMs).
+- **GA sessions / GA key events** columns per campaign, so Ads conversions, GA4 key events and WhatConverts leads sit next to each other.
+- **Organic search** table from Search Console: clicks, impressions, CTR and average position per query, with the Ads spend on the same keyword when you also bid on it.
 - Date range filter, a "Google Ads leads only" toggle, spam and duplicate exclusion, and CSV export.
 
 ## Run it
@@ -22,7 +24,52 @@ Click **Load sample data** to try it with fictional data.
 
 ## Getting data in
 
-### Option A: CSV exports (no setup)
+### Option A: Live connections (recommended)
+
+Once connected, the dashboard pulls fresh data every time it is opened (last 30 days by default), and again whenever you widen the date range. **Refresh data** forces a new pull; otherwise results are cached on the server for 10 minutes.
+
+Copy `.env.example` to `.env`, fill in the steps below, then `npm start` and open **Connections**.
+
+#### WhatConverts
+
+1. WhatConverts → **Integrations → API Keys** → create a key (a profile key, or a master account key).
+2. Put the token and secret in `WHATCONVERTS_API_TOKEN` and `WHATCONVERTS_API_SECRET`. With a master key, also set `WHATCONVERTS_PROFILE_ID`.
+
+#### Google Ads, Google Analytics 4 and Search Console
+
+One Google sign-in covers all three.
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create or pick a project and enable the **Google Ads API**, **Google Analytics Data API**, **Google Analytics Admin API** and **Google Search Console API**.
+2. **APIs & Services → OAuth consent screen**: set it up (Internal if you use Google Workspace; otherwise External, and **publish** it, because refresh tokens for apps left in "Testing" expire after 7 days).
+3. **Credentials → Create credentials → OAuth client ID → Web application**. Add this authorized redirect URI:
+   `http://localhost:3000/auth/google/callback` (on a server, use your URL and set `PUBLIC_URL` to match).
+4. Put the client ID and secret in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+5. For Google Ads, also set `GOOGLE_ADS_DEVELOPER_TOKEN` (Google Ads MCC → Tools → API Center), `GOOGLE_ADS_CUSTOMER_ID` (e.g. `123-456-7890`), and `GOOGLE_ADS_LOGIN_CUSTOMER_ID` if access is through a manager account.
+6. Restart, open **Connections → Connect Google**, and sign in with an account that can see the Ads account, the GA4 property and the Search Console site.
+7. Pick the **GA4 property** and **Search Console site** from the dropdowns and click **Save & sync**.
+
+The Google sign-in is saved to `data/google-connection.json` (gitignored, owner-readable only). **Disconnect** revokes it. Existing setups that use `GOOGLE_ADS_CLIENT_ID` / `_SECRET` / `_REFRESH_TOKEN` keep working for Ads; click **Connect Google** once to add Analytics and Search Console access.
+
+| Variable | Where to get it |
+|---|---|
+| `WHATCONVERTS_API_TOKEN` / `_SECRET` | WhatConverts → Integrations → API Keys |
+| `WHATCONVERTS_PROFILE_ID` | Only needed with a master account key |
+| `GOOGLE_CLIENT_ID` / `_SECRET` | Google Cloud console → OAuth client (Web application) |
+| `PUBLIC_URL` | Only when hosted behind a proxy or custom domain |
+| `GA4_PROPERTY_ID` / `SEARCH_CONSOLE_SITE_URL` | Optional; normally picked in the Connections panel |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Google Ads MCC → Tools → API Center |
+| `GOOGLE_ADS_CUSTOMER_ID` | The ad account, e.g. `123-456-7890` |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Your MCC ID, if access is through a manager account |
+| `DASHBOARD_PASSWORD` | Puts a login prompt in front of the dashboard. **Set this on any server others can reach**, since the Connections panel can change the Google account. |
+
+Credentials stay on the server. The browser only talks to the dashboard's own `/api/*` routes.
+
+**How GA4 and Search Console are joined**
+
+- GA4 sessions and key events are matched to campaigns by *session campaign name* (or campaign ID), the same way WhatConverts leads are. With **Google Ads leads only** on, only `google / cpc` sessions count. GA4 doesn't split by keyword, so keyword rows show "—".
+- Search Console queries are matched to bidded keywords by text, so you can spot terms you pay for while already ranking organically. The KPI tile also counts WhatConverts leads with source `google` / medium `organic`. Search Console data runs 2–3 days behind.
+
+### Option B: CSV exports (no setup)
 
 1. **WhatConverts** → Leads → filter the date range → Export → CSV. Upload with **WhatConverts CSV**.
 2. **Google Ads** → Campaigns, or Keywords → Search keywords → Download → CSV. Upload with **Google Ads CSV**. You can select both files at once; the app detects which is which.
@@ -30,23 +77,6 @@ Click **Load sample data** to try it with fictional data.
    - Add the **Campaign ID** column if your UTMs use `{campaignid}` instead of the campaign name.
 
 Uploaded data stays in the browser tab. Nothing is sent to the server.
-
-### Option B: Live API sync
-
-Copy `.env.example` to `.env` and fill in the credentials. A **Sync from APIs** button then appears, which pulls both sources for the chosen date range.
-
-| Variable | Where to get it |
-|---|---|
-| `WHATCONVERTS_API_TOKEN` / `_SECRET` | WhatConverts → Integrations → API Keys |
-| `WHATCONVERTS_PROFILE_ID` | Only needed with a master account key |
-| `GOOGLE_ADS_DEVELOPER_TOKEN` | Google Ads MCC → Tools → API Center |
-| `GOOGLE_ADS_CLIENT_ID` / `_SECRET` | Google Cloud console → OAuth client (Desktop app) |
-| `GOOGLE_ADS_REFRESH_TOKEN` | Generate it with the OAuth client above (for example, Google's `generate_user_credentials` example) |
-| `GOOGLE_ADS_CUSTOMER_ID` | The ad account, e.g. `123-456-7890` |
-| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Your MCC ID, if access is through a manager account |
-| `DASHBOARD_PASSWORD` | Optional. Puts a login prompt in front of the dashboard. |
-
-Credentials stay on the server. The browser only calls `/api/sync`.
 
 ## How leads are matched to campaigns and keywords
 

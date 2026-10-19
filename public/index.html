@@ -10,10 +10,11 @@
   <header class="topbar">
     <div>
       <h1>RLG Lead Dashboard</h1>
-      <p class="sub">WhatConverts leads cross-referenced with Google Ads campaigns and keywords</p>
+      <p class="sub">WhatConverts leads cross-referenced with Google Ads, Google Analytics and Search Console</p>
     </div>
     <div class="data-actions">
-      <button id="syncBtn" class="btn primary" hidden>Sync from APIs</button>
+      <button id="syncBtn" class="btn primary" hidden>Refresh data</button>
+      <button id="connectionsBtn" class="btn">Connections</button>
       <label class="btn">WhatConverts CSV
         <input type="file" id="wcFile" accept=".csv,.tsv,.txt" multiple hidden>
       </label>
@@ -27,6 +28,17 @@
 
   <div id="dataStatus" class="data-status"></div>
   <div id="messages"></div>
+
+  <section class="card" id="connectionsCard" hidden>
+    <div class="card-head">
+      <h2>Connections</h2>
+      <button id="closeConnections" class="btn small ghost">Close</button>
+    </div>
+    <div class="connections">
+      <ul class="sources" id="sources"></ul>
+      <div class="google-setup" id="googleSetup"></div>
+    </div>
+  </section>
 
   <section class="filters">
     <label>Campaign
@@ -58,7 +70,9 @@
             <th class="name">Campaign / Keyword</th>
             <th>Spend</th>
             <th>Clicks</th>
+            <th class="ga" title="Sessions recorded by Google Analytics 4 for this campaign">GA sessions</th>
             <th title="Conversions reported by Google Ads">Ads conv.</th>
+            <th class="ga" title="Key events (conversions) recorded by Google Analytics 4">GA key events</th>
             <th title="Leads recorded in WhatConverts">WC leads</th>
             <th>Calls</th>
             <th>Forms</th>
@@ -72,6 +86,32 @@
         <tbody></tbody>
       </table>
       <p id="empty" class="empty">Load a WhatConverts leads export and a Google Ads campaign or keyword report to get started — or click <b>Load sample data</b>.</p>
+    </div>
+  </section>
+
+  <section class="card" id="organicCard" hidden>
+    <div class="card-head">
+      <h2>Organic search <span class="dim">· Search Console</span></h2>
+      <div class="card-tools">
+        <button id="organicMore" class="btn small ghost">Show all</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="organic">
+        <thead>
+          <tr>
+            <th class="name">Query</th>
+            <th>Clicks</th>
+            <th>Impressions</th>
+            <th>CTR</th>
+            <th title="Impression-weighted average position">Avg. position</th>
+            <th title="Google Ads spend on the bidded keyword with the same text">Ads spend</th>
+            <th title="Google Ads clicks on the bidded keyword with the same text">Ads clicks</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="organicEmpty" class="empty" hidden>No Search Console queries match.</p>
     </div>
   </section>
 

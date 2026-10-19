@@ -1,13 +1,17 @@
-// Zero-dependency server: serves the dashboard and proxies WhatConverts +
-// Google Ads APIs so credentials never reach the browser.
+// Zero-dependency server: serves the dashboard and proxies WhatConverts,
+// Google Ads, GA4 and Search Console APIs so credentials never reach the browser.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { wcRecord, adsRecord } from './public/core.js';
+import { wcRecord, adsRecord, gaRecord, gscRecord } from './public/core.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(ROOT, '.env'));
+// Written by the "Connect Google" flow and the settings picker. Holds a refresh
+// token, so it is gitignored and created owner-readable only.
+const CONNECTION_FILE = path.join(ROOT, 'data', 'google-connection.json');
 
 const PORT = Number(process.env.PORT) || 3000;
 const env = k => (process.env[k] || '').trim();
@@ -21,9 +25,40 @@ function loadEnv(file) {
   }
 }
 
+function readConnection() {
+  try { return JSON.parse(fs.readFileSync(CONNECTION_FILE, 'utf8')); } catch { return {}; }
+}
+function writeConnection(patch) {
+  const next = { ...readConnection(), ...patch };
+  for (const k of Object.keys(next)) if (next[k] === undefined) delete next[k];
+  fs.mkdirSync(path.dirname(CONNECTION_FILE), { recursive: true });
+  fs.writeFileSync(CONNECTION_FILE, JSON.stringify(next, null, 2), { mode: 0o600 });
+  tokenCache = { token: '', expires: 0 };
+  syncCache.clear();
+}
+
+// One Google OAuth client and refresh token covers Ads, GA4 and Search Console.
+// GOOGLE_ADS_* names still work for setups made before GA4/GSC were added.
+const google = {
+  clientId: () => env('GOOGLE_CLIENT_ID') || env('GOOGLE_ADS_CLIENT_ID'),
+  clientSecret: () => env('GOOGLE_CLIENT_SECRET') || env('GOOGLE_ADS_CLIENT_SECRET'),
+  refreshToken: () => readConnection().refreshToken || env('GOOGLE_REFRESH_TOKEN') || env('GOOGLE_ADS_REFRESH_TOKEN'),
+  ga4Property: () => String(readConnection().ga4PropertyId || env('GA4_PROPERTY_ID')).replace(/^properties\//, ''),
+  gscSite: () => readConnection().gscSiteUrl || env('SEARCH_CONSOLE_SITE_URL'),
+};
+const GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/adwords',
+  'https://www.googleapis.com/auth/analytics.readonly',
+  'https://www.googleapis.com/auth/webmasters.readonly',
+  'openid', 'email',
+];
+
 const wcConfigured = () => !!(env('WHATCONVERTS_API_TOKEN') && env('WHATCONVERTS_API_SECRET'));
-const adsConfigured = () => ['GOOGLE_ADS_DEVELOPER_TOKEN', 'GOOGLE_ADS_CLIENT_ID', 'GOOGLE_ADS_CLIENT_SECRET',
-  'GOOGLE_ADS_REFRESH_TOKEN', 'GOOGLE_ADS_CUSTOMER_ID'].every(k => env(k));
+const googleClientConfigured = () => !!(google.clientId() && google.clientSecret());
+const googleConnected = () => googleClientConfigured() && !!google.refreshToken();
+const adsConfigured = () => googleConnected() && !!(env('GOOGLE_ADS_DEVELOPER_TOKEN') && env('GOOGLE_ADS_CUSTOMER_ID'));
+const gaConfigured = () => googleConnected() && !!google.ga4Property();
+const gscConfigured = () => googleConnected() && !!google.gscSite();
 
 // ---------- WhatConverts ----------
 
@@ -47,7 +82,7 @@ async function fetchWhatConvertsLeads(from, to) {
   return leads;
 }
 
-// ---------- Google Ads ----------
+// ---------- Google auth ----------
 
 let tokenCache = { token: '', expires: 0 };
 async function googleAccessToken() {
@@ -57,16 +92,163 @@ async function googleAccessToken() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      client_id: env('GOOGLE_ADS_CLIENT_ID'),
-      client_secret: env('GOOGLE_ADS_CLIENT_SECRET'),
-      refresh_token: env('GOOGLE_ADS_REFRESH_TOKEN'),
+      client_id: google.clientId(),
+      client_secret: google.clientSecret(),
+      refresh_token: google.refreshToken(),
     }),
   });
-  if (!res.ok) throw new Error(`Google OAuth ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new Error(`Google sign-in expired or was revoked (${res.status}). Click "Connect Google" again.`);
   const body = await res.json();
   tokenCache = { token: body.access_token, expires: Date.now() + body.expires_in * 1000 };
   return tokenCache.token;
 }
+
+async function googleApi(label, url, body) {
+  const res = await fetch(url, {
+    method: body ? 'POST' : 'GET',
+    headers: { Authorization: `Bearer ${await googleAccessToken()}`, 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.ok) return res.json();
+  const text = await res.text();
+  const hint = /insufficient.*scope|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(text)
+    ? ' The saved Google sign-in does not include this access; click "Connect Google" again.' : '';
+  throw new Error(`${label} API ${res.status}: ${text.slice(0, 300)}${hint}`);
+}
+
+// Where Google sends the browser back to. Must match an "Authorized redirect
+// URI" on the OAuth client exactly.
+function redirectUri(req) {
+  if (env('PUBLIC_URL')) return `${env('PUBLIC_URL').replace(/\/$/, '')}/auth/google/callback`;
+  const proto = (req.headers['x-forwarded-proto'] || '').split(',')[0] || 'http';
+  return `${proto}://${req.headers['x-forwarded-host'] || req.headers.host}/auth/google/callback`;
+}
+
+const oauthStates = new Map(); // state -> expiry, guards the callback against forged requests
+
+function startGoogleAuth(req, res) {
+  const state = crypto.randomBytes(16).toString('hex');
+  const now = Date.now();
+  for (const [k, exp] of oauthStates) if (exp < now) oauthStates.delete(k);
+  oauthStates.set(state, now + 10 * 60_000);
+  const qs = new URLSearchParams({
+    client_id: google.clientId(), redirect_uri: redirectUri(req), response_type: 'code',
+    scope: GOOGLE_SCOPES.join(' '), access_type: 'offline', prompt: 'consent', include_granted_scopes: 'true', state,
+  });
+  res.writeHead(302, { Location: `https://accounts.google.com/o/oauth2/v2/auth?${qs}` });
+  res.end();
+}
+
+async function finishGoogleAuth(req, res, url) {
+  const state = url.searchParams.get('state');
+  const valid = state && (oauthStates.get(state) || 0) > Date.now();
+  oauthStates.delete(state);
+  const back = msg => { res.writeHead(302, { Location: `/?google=${encodeURIComponent(msg)}` }); res.end(); };
+  if (!valid) return back('Sign-in link expired, please try again');
+  if (url.searchParams.get('error')) return back(`Google sign-in cancelled (${url.searchParams.get('error')})`);
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code', code: url.searchParams.get('code') || '',
+      client_id: google.clientId(), client_secret: google.clientSecret(), redirect_uri: redirectUri(req),
+    }),
+  });
+  const body = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok || !body.refresh_token) {
+    return back(`Google sign-in failed: ${body.error_description || body.error || 'no refresh token returned'}`);
+  }
+  let email = '';
+  try { email = JSON.parse(Buffer.from(body.id_token.split('.')[1], 'base64url')).email || ''; } catch { /* optional */ }
+  writeConnection({ refreshToken: body.refresh_token, email, scopes: body.scope });
+  return back('connected');
+}
+
+async function disconnectGoogle() {
+  const token = readConnection().refreshToken;
+  if (token) {
+    await fetch('https://oauth2.googleapis.com/revoke', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token }),
+    }).catch(() => {});
+  }
+  writeConnection({ refreshToken: undefined, email: undefined, scopes: undefined });
+}
+
+// GA4 properties and Search Console sites the signed-in Google user can see,
+// for the settings picker.
+async function listGoogleAccounts() {
+  const [ga, gsc] = await Promise.allSettled([
+    (async () => {
+      const out = [];
+      let pageToken = '';
+      do {
+        const body = await googleApi('Google Analytics Admin',
+          `https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200${pageToken ? `&pageToken=${pageToken}` : ''}`);
+        for (const a of body.accountSummaries || []) {
+          for (const p of a.propertySummaries || []) {
+            out.push({ id: p.property.replace('properties/', ''), name: `${p.displayName} (${a.displayName})` });
+          }
+        }
+        pageToken = body.nextPageToken || '';
+      } while (pageToken);
+      return out;
+    })(),
+    googleApi('Search Console', 'https://www.googleapis.com/webmasters/v3/sites')
+      .then(b => (b.siteEntry || []).filter(s => s.permissionLevel !== 'siteUnverifiedUser').map(s => s.siteUrl).sort()),
+  ]);
+  return {
+    ga4Properties: ga.status === 'fulfilled' ? ga.value : [],
+    gscSites: gsc.status === 'fulfilled' ? gsc.value : [],
+    errors: [ga, gsc].filter(r => r.status === 'rejected').map(r => r.reason.message),
+  };
+}
+
+// ---------- Google Analytics 4 ----------
+
+async function fetchGa4(from, to) {
+  const rows = [];
+  const limit = 100_000;
+  for (let offset = 0; ; offset += limit) {
+    const body = await googleApi('Google Analytics',
+      `https://analyticsdata.googleapis.com/v1beta/properties/${google.ga4Property()}:runReport`, {
+        dateRanges: [{ startDate: from, endDate: to }],
+        dimensions: ['date', 'sessionSource', 'sessionMedium', 'sessionCampaignName'].map(name => ({ name })),
+        metrics: ['sessions', 'engagedSessions', 'keyEvents'].map(name => ({ name })),
+        limit, offset,
+      });
+    for (const r of body.rows || []) {
+      const [d, source, medium, campaign] = r.dimensionValues.map(v => v.value);
+      const [sessions, engagedSessions, keyEvents] = r.metricValues.map(v => v.value);
+      rows.push(gaRecord({
+        date: `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, source, medium, campaign, sessions, engagedSessions, keyEvents,
+      }));
+    }
+    if (offset + limit >= (body.rowCount || 0) || offset >= 900_000) break;
+  }
+  return rows;
+}
+
+// ---------- Search Console ----------
+
+async function fetchSearchConsole(from, to) {
+  const rows = [];
+  const rowLimit = 25_000;
+  const site = encodeURIComponent(google.gscSite());
+  for (let startRow = 0; startRow < 250_000; startRow += rowLimit) {
+    const body = await googleApi('Search Console',
+      `https://www.googleapis.com/webmasters/v3/sites/${site}/searchAnalytics/query`, {
+        startDate: from, endDate: to, dimensions: ['date', 'query'], type: 'web', rowLimit, startRow,
+      });
+    for (const r of body.rows || []) {
+      rows.push(gscRecord({ date: r.keys[0], query: r.keys[1], clicks: r.clicks, impressions: r.impressions, position: r.position }));
+    }
+    if ((body.rows || []).length < rowLimit) break;
+  }
+  return rows;
+}
+
+// ---------- Google Ads ----------
 
 async function gaql(query) {
   const version = env('GOOGLE_ADS_API_VERSION') || 'v25';
@@ -112,9 +294,66 @@ async function fetchGoogleAds(from, to) {
   };
 }
 
+// ---------- Sync ----------
+
+// Reloading the page or nudging the date range shouldn't re-pull every API.
+const SYNC_TTL = 10 * 60_000;
+const syncCache = new Map();
+
+async function syncAll(from, to, fresh) {
+  const key = `${from}|${to}`;
+  const hit = syncCache.get(key);
+  if (!fresh && hit && hit.expires > Date.now()) return hit.body;
+  const errors = [];
+  const run = (on, fn) => on ? fn(from, to).catch(e => { errors.push(e.message); return null; }) : null;
+  const [leads, ads, ga, gsc] = await Promise.all([
+    run(wcConfigured(), fetchWhatConvertsLeads),
+    run(adsConfigured(), fetchGoogleAds),
+    run(gaConfigured(), fetchGa4),
+    run(gscConfigured(), fetchSearchConsole),
+  ]);
+  const body = { leads, ...(ads || {}), ga, gsc, errors, syncedAt: new Date().toISOString() };
+  if (!errors.length) {
+    if (syncCache.size > 20) syncCache.clear();
+    syncCache.set(key, { body, expires: Date.now() + SYNC_TTL });
+  }
+  return body;
+}
+
+function status() {
+  const c = readConnection();
+  return {
+    whatconverts: wcConfigured(),
+    googleAds: adsConfigured(),
+    ga4: gaConfigured(),
+    searchConsole: gscConfigured(),
+    google: {
+      clientConfigured: googleClientConfigured(),
+      connected: googleConnected(),
+      // Connected through .env rather than the button: can't be disconnected from the UI.
+      viaEnv: googleConnected() && !c.refreshToken,
+      email: c.email || '',
+      adsMissing: ['GOOGLE_ADS_DEVELOPER_TOKEN', 'GOOGLE_ADS_CUSTOMER_ID'].filter(k => !env(k)),
+      ga4PropertyId: google.ga4Property(),
+      gscSiteUrl: google.gscSite(),
+    },
+  };
+}
+
+async function readJson(req) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 64 * 1024) throw new Error('Request too large');
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString() || '{}');
+}
+
 // ---------- HTTP ----------
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.csv': 'text/csv', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.csv': 'text/csv', '.json': 'application/json', '.svg': 'image/svg+xml' };
 
 function send(res, status, body, type = 'application/json') {
   res.writeHead(status, { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'no-store' });
@@ -139,19 +378,35 @@ const server = http.createServer(async (req, res) => {
   }
   const url = new URL(req.url, 'http://localhost');
   try {
-    if (url.pathname === '/api/status') {
-      return send(res, 200, { whatconverts: wcConfigured(), googleAds: adsConfigured() });
-    }
+    if (url.pathname === '/api/status') return send(res, 200, status());
     if (url.pathname === '/api/sync') {
       const from = url.searchParams.get('from');
       const to = url.searchParams.get('to');
       if (!isDate(from) || !isDate(to)) return send(res, 400, { error: 'from and to must be YYYY-MM-DD' });
-      const errors = [];
-      const [leads, ads] = await Promise.all([
-        wcConfigured() ? fetchWhatConvertsLeads(from, to).catch(e => { errors.push(e.message); return null; }) : null,
-        adsConfigured() ? fetchGoogleAds(from, to).catch(e => { errors.push(e.message); return null; }) : null,
-      ]);
-      return send(res, 200, { leads, ...(ads || {}), errors });
+      return send(res, 200, await syncAll(from, to, url.searchParams.has('fresh')));
+    }
+    if (url.pathname === '/auth/google') {
+      if (!googleClientConfigured()) return send(res, 400, 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env first.', 'text/plain');
+      return startGoogleAuth(req, res);
+    }
+    if (url.pathname === '/auth/google/callback') return finishGoogleAuth(req, res, url);
+    if (url.pathname === '/api/google/accounts') {
+      if (!googleConnected()) return send(res, 400, { error: 'Connect Google first' });
+      return send(res, 200, await listGoogleAccounts());
+    }
+    // State-changing calls must be JSON POSTs, which a cross-site form can't forge.
+    const jsonPost = req.method === 'POST' && /^application\/json/.test(req.headers['content-type'] || '');
+    if (url.pathname === '/api/google/disconnect' && jsonPost) {
+      await disconnectGoogle();
+      return send(res, 200, status());
+    }
+    if (url.pathname === '/api/settings' && jsonPost) {
+      const body = await readJson(req);
+      const patch = {};
+      if (typeof body.ga4PropertyId === 'string') patch.ga4PropertyId = body.ga4PropertyId.replace(/[^0-9]/g, '') || undefined;
+      if (typeof body.gscSiteUrl === 'string') patch.gscSiteUrl = body.gscSiteUrl.trim() || undefined;
+      writeConnection(patch);
+      return send(res, 200, status());
     }
     // static files
     const rel = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
@@ -169,7 +424,11 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  const on = v => v ? 'connected' : 'not connected';
   console.log(`Lead dashboard on http://localhost:${PORT}`);
-  console.log(`  WhatConverts API: ${wcConfigured() ? 'configured' : 'not configured (CSV upload only)'}`);
-  console.log(`  Google Ads API:   ${adsConfigured() ? 'configured' : 'not configured (CSV upload only)'}`);
+  console.log(`  WhatConverts:     ${on(wcConfigured())}`);
+  console.log(`  Google Ads:       ${on(adsConfigured())}`);
+  console.log(`  GA4:              ${on(gaConfigured())}`);
+  console.log(`  Search Console:   ${on(gscConfigured())}`);
+  if (googleClientConfigured() && !googleConnected()) console.log(`  Open the dashboard and click "Connect Google" to finish Google setup.`);
 });

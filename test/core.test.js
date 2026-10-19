@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {
   parseCSV, parseAdsCSV, parseWhatConvertsCSV, wcRecord, adsRecord,
   normCampaign, normKeyword, isGoogleAdsLead, buildReport, filterReport, decodeBytes,
+  gaRecord, gscRecord, gaSiteTotals, organicQueries, sumRows,
 } from '../public/core.js';
 
 const sample = f => fs.readFileSync(new URL(`../samples/${f}`, import.meta.url), 'utf8');
@@ -152,4 +153,52 @@ test('search terms roll up to the longest matching bidded keyword', () => {
   assert.equal(dog.metrics.costPerLead, null);
   assert.equal(dog.metrics.convGap, null);
   assert.equal(filterReport(report, { keyword: 'consultation' })[0].keywords[0].keyword, 'car accident lawyer');
+});
+
+test('GA4 sessions join to known campaigns by name or ID, respecting filters', () => {
+  const adsCampaigns = [adsRecord({ campaign: 'Search - PI', campaignId: '111', cost: 100 })];
+  const leads = [wcRecord({ lead_campaign: 'Legacy', gclid: 'g' })];
+  const ga = [
+    gaRecord({ date: '2026-10-01', source: 'google', medium: 'cpc', campaign: 'search_-_pi', sessions: 40, engagedSessions: 20, keyEvents: 3 }),
+    gaRecord({ date: '2026-10-02', source: 'google', medium: 'cpc', campaign: '111', sessions: 10, keyEvents: 1 }),
+    gaRecord({ date: '2026-10-02', source: 'google', medium: 'cpc', campaign: 'Legacy', sessions: 5 }),
+    gaRecord({ date: '2026-10-02', source: 'newsletter', medium: 'email', campaign: 'Search - PI', sessions: 7 }),
+    gaRecord({ date: '2026-10-02', source: 'google', medium: 'cpc', campaign: 'Unknown', sessions: 99 }),
+    gaRecord({ date: '2026-09-01', source: 'google', medium: 'cpc', campaign: 'Search - PI', sessions: 1000 }),
+  ];
+  const r = buildReport({ adsCampaigns, leads, ga, options: { from: '2026-09-15' } });
+  const pi = r.campaigns.find(c => c.name === 'Search - PI');
+  assert.deepEqual(pi.ga, { sessions: 50, engagedSessions: 20, keyEvents: 4 });
+  assert.equal(r.campaigns.find(c => c.name === 'Legacy').ga.sessions, 5);
+  assert.ok(!r.campaigns.some(c => c.name === 'Unknown'), 'GA-only campaigns are not added');
+  assert.equal(r.totals.ga.sessions, 55);
+  assert.equal(sumRows(r.campaigns).ga.sessions, 55);
+  const all = buildReport({ adsCampaigns, leads, ga, options: { from: '2026-09-15', googleOnly: false } });
+  assert.equal(all.campaigns.find(c => c.name === 'Search - PI').ga.sessions, 57, 'non-paid sessions count when Google-only is off');
+  assert.equal(gaSiteTotals(ga, { from: '2026-09-15' }).sessions, 161);
+});
+
+test('organicQueries aggregates Search Console rows and flags paid overlap', () => {
+  const gsc = [
+    gscRecord({ date: '2026-10-01', query: 'Car Accident Lawyer', clicks: 10, impressions: 100, position: 2 }),
+    gscRecord({ date: '2026-10-02', query: 'car accident lawyer', clicks: 5, impressions: 300, position: 6 }),
+    gscRecord({ date: '2026-10-02', query: 'dog bite lawyer', clicks: 20, impressions: 50, position: 1 }),
+    gscRecord({ date: '2026-08-01', query: 'old', clicks: 999, impressions: 999, position: 1 }),
+  ];
+  const adsKeywords = [adsRecord({ campaign: 'PI', keyword: '[car accident lawyer]', cost: 80, clicks: 4, date: '2026-10-01' })];
+  const leads = [
+    wcRecord({ lead_source: 'google', lead_medium: 'organic', date_created: '2026-10-01' }),
+    wcRecord({ lead_source: 'google', lead_medium: 'organic', date_created: '2026-10-01', spam: 'yes' }),
+    wcRecord({ lead_source: 'google', lead_medium: 'cpc', date_created: '2026-10-01' }),
+  ];
+  const { rows, totals } = organicQueries({ gsc, adsKeywords, leads, options: { from: '2026-09-15' } });
+  assert.deepEqual(rows.map(q => q.query), ['dog bite lawyer', 'car accident lawyer']);
+  const car = rows[1];
+  assert.equal(car.clicks, 15);
+  assert.equal(car.position, 5, 'position is impression-weighted');
+  assert.equal(car.paid.cost, 80);
+  assert.equal(rows[0].paid, null);
+  assert.equal(totals.clicks, 35);
+  assert.equal(totals.organicLeads, 1);
+  assert.equal(organicQueries({ gsc, options: { from: '2026-09-15' }, keyword: 'dog' }).rows.length, 1);
 });
