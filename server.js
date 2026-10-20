@@ -1,11 +1,12 @@
-// Zero-dependency server: serves the dashboard and proxies WhatConverts,
-// Google Ads, GA4 and Search Console APIs so credentials never reach the browser.
+// Zero-dependency server: serves the dashboard and proxies WhatConverts, Google
+// Ads, GA4, Search Console and Business Profile APIs so credentials never reach
+// the browser.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { wcRecord, adsRecord, gaRecord, gscRecord } from './public/core.js';
+import { wcRecord, adsRecord, gaRecord, gscRecord, gbpRecord } from './public/core.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(ROOT, '.env'));
@@ -37,7 +38,8 @@ function writeConnection(patch) {
   syncCache.clear();
 }
 
-// One Google OAuth client and refresh token covers Ads, GA4 and Search Console.
+// One Google OAuth client and refresh token covers Ads, GA4, Search Console and
+// Business Profile.
 // GOOGLE_ADS_* names still work for setups made before GA4/GSC were added.
 const google = {
   clientId: () => env('GOOGLE_CLIENT_ID') || env('GOOGLE_ADS_CLIENT_ID'),
@@ -45,11 +47,15 @@ const google = {
   refreshToken: () => readConnection().refreshToken || env('GOOGLE_REFRESH_TOKEN') || env('GOOGLE_ADS_REFRESH_TOKEN'),
   ga4Property: () => String(readConnection().ga4PropertyId || env('GA4_PROPERTY_ID')).replace(/^properties\//, ''),
   gscSite: () => readConnection().gscSiteUrl || env('SEARCH_CONSOLE_SITE_URL'),
+  // [{ id, title }]; GBP_LOCATION_IDS takes a comma-separated list of location IDs.
+  gbpLocations: () => readConnection().gbpLocations
+    || env('GBP_LOCATION_IDS').split(',').map(id => id.trim().replace(/^locations\//, '')).filter(Boolean).map(id => ({ id, title: id })),
 };
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/adwords',
   'https://www.googleapis.com/auth/analytics.readonly',
   'https://www.googleapis.com/auth/webmasters.readonly',
+  'https://www.googleapis.com/auth/business.manage',
   'openid', 'email',
 ];
 
@@ -59,6 +65,7 @@ const googleConnected = () => googleClientConfigured() && !!google.refreshToken(
 const adsConfigured = () => googleConnected() && !!(env('GOOGLE_ADS_DEVELOPER_TOKEN') && env('GOOGLE_ADS_CUSTOMER_ID'));
 const gaConfigured = () => googleConnected() && !!google.ga4Property();
 const gscConfigured = () => googleConnected() && !!google.gscSite();
+const gbpConfigured = () => googleConnected() && google.gbpLocations().length > 0;
 
 // ---------- WhatConverts ----------
 
@@ -175,10 +182,36 @@ async function disconnectGoogle() {
   writeConnection({ refreshToken: undefined, email: undefined, scopes: undefined });
 }
 
-// GA4 properties and Search Console sites the signed-in Google user can see,
-// for the settings picker.
+// Business Profile locations across every account the signed-in user manages.
+async function listBusinessProfileLocations() {
+  const accounts = [];
+  let pageToken = '';
+  do {
+    const body = await googleApi('Business Profile',
+      `https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=20${pageToken ? `&pageToken=${pageToken}` : ''}`);
+    accounts.push(...(body.accounts || []));
+    pageToken = body.nextPageToken || '';
+  } while (pageToken);
+  const out = [];
+  for (const a of accounts) {
+    pageToken = '';
+    do {
+      const body = await googleApi('Business Profile',
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${a.name}/locations?readMask=name,title,storefrontAddress&pageSize=100${pageToken ? `&pageToken=${pageToken}` : ''}`);
+      for (const l of body.locations || []) {
+        const city = l.storefrontAddress?.locality;
+        out.push({ id: l.name.replace('locations/', ''), title: city ? `${l.title} (${city})` : l.title });
+      }
+      pageToken = body.nextPageToken || '';
+    } while (pageToken);
+  }
+  return out;
+}
+
+// GA4 properties, Search Console sites and Business Profile locations the
+// signed-in Google user can see, for the settings picker.
 async function listGoogleAccounts() {
-  const [ga, gsc] = await Promise.allSettled([
+  const [ga, gsc, gbp] = await Promise.allSettled([
     (async () => {
       const out = [];
       let pageToken = '';
@@ -196,11 +229,13 @@ async function listGoogleAccounts() {
     })(),
     googleApi('Search Console', 'https://www.googleapis.com/webmasters/v3/sites')
       .then(b => (b.siteEntry || []).filter(s => s.permissionLevel !== 'siteUnverifiedUser').map(s => s.siteUrl).sort()),
+    listBusinessProfileLocations(),
   ]);
   return {
     ga4Properties: ga.status === 'fulfilled' ? ga.value : [],
     gscSites: gsc.status === 'fulfilled' ? gsc.value : [],
-    errors: [ga, gsc].filter(r => r.status === 'rejected').map(r => r.reason.message),
+    gbpLocations: gbp.status === 'fulfilled' ? gbp.value : [],
+    errors: [ga, gsc, gbp].filter(r => r.status === 'rejected').map(r => r.reason.message),
   };
 }
 
@@ -246,6 +281,47 @@ async function fetchSearchConsole(from, to) {
     if ((body.rows || []).length < rowLimit) break;
   }
   return rows;
+}
+
+// ---------- Business Profile ----------
+
+const GBP_METRICS = {
+  CALL_CLICKS: 'calls',
+  WEBSITE_CLICKS: 'websiteClicks',
+  BUSINESS_DIRECTION_REQUESTS: 'directions',
+  BUSINESS_IMPRESSIONS_DESKTOP_MAPS: 'impressions',
+  BUSINESS_IMPRESSIONS_DESKTOP_SEARCH: 'impressions',
+  BUSINESS_IMPRESSIONS_MOBILE_MAPS: 'impressions',
+  BUSINESS_IMPRESSIONS_MOBILE_SEARCH: 'impressions',
+};
+
+async function fetchBusinessProfile(from, to) {
+  const range = (prefix, d) => {
+    const [year, month, day] = d.split('-').map(Number);
+    return [[`${prefix}.year`, year], [`${prefix}.month`, month], [`${prefix}.day`, day]];
+  };
+  const perLocation = await Promise.all(google.gbpLocations().map(async loc => {
+    const qs = new URLSearchParams([
+      ...Object.keys(GBP_METRICS).map(m => ['dailyMetrics', m]),
+      ...range('dailyRange.start_date', from), ...range('dailyRange.end_date', to),
+    ]);
+    const body = await googleApi('Business Profile',
+      `https://businessprofileperformance.googleapis.com/v1/locations/${loc.id}:fetchMultiDailyMetricsTimeSeries?${qs}`);
+    const byDate = new Map();
+    for (const multi of body.multiDailyMetricTimeSeries || []) {
+      for (const series of multi.dailyMetricTimeSeries || []) {
+        const field = GBP_METRICS[series.dailyMetric];
+        for (const v of series.timeSeries?.datedValues || []) {
+          const date = `${v.date.year}-${String(v.date.month).padStart(2, '0')}-${String(v.date.day).padStart(2, '0')}`;
+          if (!byDate.has(date)) byDate.set(date, { date, locationId: loc.id, location: loc.title });
+          const row = byDate.get(date);
+          row[field] = (row[field] || 0) + Number(v.value || 0); // days with zero omit "value"
+        }
+      }
+    }
+    return [...byDate.values()].map(gbpRecord);
+  }));
+  return perLocation.flat();
 }
 
 // ---------- Google Ads ----------
@@ -306,13 +382,14 @@ async function syncAll(from, to, fresh) {
   if (!fresh && hit && hit.expires > Date.now()) return hit.body;
   const errors = [];
   const run = (on, fn) => on ? fn(from, to).catch(e => { errors.push(e.message); return null; }) : null;
-  const [leads, ads, ga, gsc] = await Promise.all([
+  const [leads, ads, ga, gsc, gbp] = await Promise.all([
     run(wcConfigured(), fetchWhatConvertsLeads),
     run(adsConfigured(), fetchGoogleAds),
     run(gaConfigured(), fetchGa4),
     run(gscConfigured(), fetchSearchConsole),
+    run(gbpConfigured(), fetchBusinessProfile),
   ]);
-  const body = { leads, ...(ads || {}), ga, gsc, errors, syncedAt: new Date().toISOString() };
+  const body = { leads, ...(ads || {}), ga, gsc, gbp, errors, syncedAt: new Date().toISOString() };
   if (!errors.length) {
     if (syncCache.size > 20) syncCache.clear();
     syncCache.set(key, { body, expires: Date.now() + SYNC_TTL });
@@ -327,6 +404,7 @@ function status() {
     googleAds: adsConfigured(),
     ga4: gaConfigured(),
     searchConsole: gscConfigured(),
+    businessProfile: gbpConfigured(),
     google: {
       clientConfigured: googleClientConfigured(),
       connected: googleConnected(),
@@ -336,6 +414,7 @@ function status() {
       adsMissing: ['GOOGLE_ADS_DEVELOPER_TOKEN', 'GOOGLE_ADS_CUSTOMER_ID'].filter(k => !env(k)),
       ga4PropertyId: google.ga4Property(),
       gscSiteUrl: google.gscSite(),
+      gbpLocations: google.gbpLocations(),
     },
   };
 }
@@ -405,6 +484,12 @@ const server = http.createServer(async (req, res) => {
       const patch = {};
       if (typeof body.ga4PropertyId === 'string') patch.ga4PropertyId = body.ga4PropertyId.replace(/[^0-9]/g, '') || undefined;
       if (typeof body.gscSiteUrl === 'string') patch.gscSiteUrl = body.gscSiteUrl.trim() || undefined;
+      if (Array.isArray(body.gbpLocations)) {
+        const locs = body.gbpLocations
+          .map(l => ({ id: String(l?.id || '').replace(/[^0-9]/g, ''), title: String(l?.title || '').slice(0, 200) }))
+          .filter(l => l.id);
+        patch.gbpLocations = locs.length ? locs : undefined;
+      }
       writeConnection(patch);
       return send(res, 200, status());
     }
@@ -430,5 +515,6 @@ server.listen(PORT, () => {
   console.log(`  Google Ads:       ${on(adsConfigured())}`);
   console.log(`  GA4:              ${on(gaConfigured())}`);
   console.log(`  Search Console:   ${on(gscConfigured())}`);
+  console.log(`  Business Profile: ${on(gbpConfigured())}`);
   if (googleClientConfigured() && !googleConnected()) console.log(`  Open the dashboard and click "Connect Google" to finish Google setup.`);
 });

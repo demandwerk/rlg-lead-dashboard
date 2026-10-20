@@ -5,6 +5,7 @@ import {
   parseCSV, parseAdsCSV, parseWhatConvertsCSV, wcRecord, adsRecord,
   normCampaign, normKeyword, isGoogleAdsLead, buildReport, filterReport, decodeBytes,
   gaRecord, gscRecord, gaSiteTotals, organicQueries, sumRows,
+  gbpRecord, businessProfileSummary, isBusinessProfileLead, isGoogleOrganicLead,
 } from '../public/core.js';
 
 const sample = f => fs.readFileSync(new URL(`../samples/${f}`, import.meta.url), 'utf8');
@@ -201,4 +202,29 @@ test('organicQueries aggregates Search Console rows and flags paid overlap', () 
   assert.equal(totals.clicks, 35);
   assert.equal(totals.organicLeads, 1);
   assert.equal(organicQueries({ gsc, options: { from: '2026-09-15' }, keyword: 'dog' }).rows.length, 1);
+});
+
+test('Business Profile summary totals per location and finds GBP-tagged leads', () => {
+  const gbp = [
+    gbpRecord({ date: '2026-10-01', locationId: '1', location: 'Houston', impressions: 100, calls: 3, websiteClicks: 4, directions: 1 }),
+    gbpRecord({ date: '2026-10-02', locationId: '1', location: 'Houston', impressions: 50, calls: 1 }),
+    gbpRecord({ date: '2026-10-02', locationId: '2', location: 'Dallas', impressions: 80, calls: 6 }),
+    gbpRecord({ date: '2026-08-01', locationId: '2', location: 'Dallas', calls: 99 }),
+  ];
+  const lead = o => wcRecord({ lead_source: 'google', lead_medium: 'organic', date_created: '2026-10-01', ...o });
+  const leads = [
+    lead({ lead_campaign: 'gmb' }),
+    lead({ lead_medium: 'gbp' }),
+    lead({ lead_source: 'Google My Business', lead_medium: '' }),
+    lead({ lead_campaign: 'gmb', spam: 'yes' }),
+    lead({}),
+    lead({ lead_campaign: 'gmb', gclid: 'x' }),
+  ];
+  const r = businessProfileSummary({ gbp, leads, options: { from: '2026-09-15' } });
+  assert.deepEqual(r.locations.map(l => [l.name, l.calls, l.impressions]), [['Dallas', 6, 80], ['Houston', 4, 150]]);
+  assert.deepEqual(r.totals, { impressions: 230, calls: 10, websiteClicks: 4, directions: 1 });
+  assert.equal(r.wcLeads.length, 3);
+  assert.equal(isGoogleOrganicLead(leads[0]), false, 'GBP leads are not double-counted as organic search');
+  assert.equal(isGoogleOrganicLead(leads[4]), true);
+  assert.equal(isBusinessProfileLead(leads[5]), false, 'paid clicks stay paid');
 });

@@ -1,6 +1,6 @@
 // Shared data logic: parsing exports, normalizing records, and joining
-// WhatConverts leads to Google Ads campaigns/keywords, plus GA4 sessions and
-// Search Console queries.
+// WhatConverts leads to Google Ads campaigns/keywords, plus GA4 sessions,
+// Search Console queries and Google Business Profile activity.
 // Used by the browser (app.js) and by the server (server.js) and tests.
 
 // ---------- CSV ----------
@@ -204,6 +204,19 @@ export function gscRecord(o) {
   };
 }
 
+// One Business Profile row per date × location.
+export function gbpRecord(o) {
+  return {
+    date: parseDate(o.date),
+    locationId: String(o.locationId || '').trim(),
+    location: String(o.location || o.locationId || '').trim(),
+    impressions: parseNumber(o.impressions),
+    calls: parseNumber(o.calls),
+    websiteClicks: parseNumber(o.websiteClicks),
+    directions: parseNumber(o.directions),
+  };
+}
+
 // ---------- WhatConverts ----------
 
 const WC_FIELDS = {
@@ -278,8 +291,15 @@ export function isGoogleAdsLead(lead) {
   return !!lead.gclid || isGooglePaid(lead.source, lead.medium);
 }
 
+// Leads from the Business Profile: WhatConverts' GBP integration, or the usual
+// UTM tags on the profile's website link (utm_campaign=gmb, utm_medium=gbp, ...).
+export const isBusinessProfileLead = lead =>
+  !lead.gclid && /\b(gmb|gbp|google my business|google business profile|business profile|google maps|maps)\b/i
+    .test(`${lead.source} ${lead.medium} ${lead.campaign}`);
+
 export const isGoogleOrganicLead = lead =>
-  !lead.gclid && lead.source.toLowerCase().includes('google') && lead.medium.toLowerCase() === 'organic';
+  !lead.gclid && !isBusinessProfileLead(lead) &&
+  lead.source.toLowerCase().includes('google') && lead.medium.toLowerCase() === 'organic';
 
 // ---------- Join ----------
 
@@ -523,4 +543,26 @@ export function organicQueries({ gsc = [], adsKeywords = [], leads = [], options
   const organicLeads = leads.filter(l =>
     isGoogleOrganicLead(l) && inRange(l.date, from, to) && !(excludeSpam && (l.spam || l.duplicate))).length;
   return { rows, totals: { ...withRates(totals), organicLeads } };
+}
+
+/** Business Profile activity per location for the date range, plus WhatConverts leads it produced. */
+export function businessProfileSummary({ gbp = [], leads = [], options = {} }) {
+  const { from = '', to = '', excludeSpam = true } = options;
+  const empty = () => ({ impressions: 0, calls: 0, websiteClicks: 0, directions: 0 });
+  const add = (t, r) => { for (const k of ['impressions', 'calls', 'websiteClicks', 'directions']) t[k] += r[k]; };
+  const locations = new Map();
+  const totals = empty();
+  for (const r of gbp) {
+    if (!inRange(r.date, from, to)) continue;
+    if (!locations.has(r.locationId)) locations.set(r.locationId, { id: r.locationId, name: r.location, ...empty() });
+    add(locations.get(r.locationId), r);
+    add(totals, r);
+  }
+  const wcLeads = leads.filter(l =>
+    isBusinessProfileLead(l) && inRange(l.date, from, to) && !(excludeSpam && (l.spam || l.duplicate)));
+  return {
+    locations: [...locations.values()].sort((a, b) => b.calls - a.calls || b.impressions - a.impressions),
+    totals,
+    wcLeads,
+  };
 }

@@ -10,7 +10,7 @@
   <header class="topbar">
     <div>
       <h1>RLG Lead Dashboard</h1>
-      <p class="sub">WhatConverts leads cross-referenced with Google Ads, Google Analytics and Search Console</p>
+      <p class="sub">WhatConverts leads cross-referenced with Google Ads, Analytics, Search Console and Business Profile</p>
     </div>
     <div class="data-actions">
       <button id="syncBtn" class="btn primary" hidden>Refresh data</button>
@@ -112,6 +112,27 @@
         <tbody></tbody>
       </table>
       <p id="organicEmpty" class="empty" hidden>No Search Console queries match.</p>
+    </div>
+  </section>
+
+  <section class="card" id="gbpCard" hidden>
+    <div class="card-head">
+      <h2>Google Business Profile</h2>
+      <span class="dim" id="gbpNote"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="gbp">
+        <thead>
+          <tr>
+            <th class="name">Location</th>
+            <th title="Times the profile was shown on Google Search and Maps">Impressions</th>
+            <th title="Taps on the Call button">Calls</th>
+            <th>Website clicks</th>
+            <th>Direction requests</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
   </section>
 

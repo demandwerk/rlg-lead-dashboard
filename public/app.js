@@ -1,11 +1,11 @@
 import {
   decodeBytes, parseAdsCSV, parseWhatConvertsCSV, buildReport, filterReport, sumRows,
-  gaRecord, gscRecord, gaSiteTotals, organicQueries,
+  gaRecord, gscRecord, gbpRecord, gaSiteTotals, organicQueries, businessProfileSummary,
 } from './core.js';
 
 const $ = id => document.getElementById(id);
 const state = {
-  leads: [], adsCampaigns: [], adsKeywords: [], ga: [], gsc: [], source: '',
+  leads: [], adsCampaigns: [], adsKeywords: [], ga: [], gsc: [], gbp: [], source: '',
   open: new Set(), allOpen: false, organicAll: false,
   api: null, synced: null, // /api/status result; { from, to } of the last API sync
 };
@@ -18,6 +18,8 @@ const pct = v => v === null || v === undefined ? '—' : `${(v * 100).toFixed(1)
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function message(text, kind = 'warn') {
+  // One expired Google sign-in fails every Google source with the same text.
+  if ([...$('messages').children].some(d => d.textContent === text)) return;
   const div = document.createElement('div');
   div.className = `msg ${kind}`;
   div.textContent = text;
@@ -59,28 +61,30 @@ $('adsFile').addEventListener('change', async e => {
 });
 
 $('sampleBtn').addEventListener('click', async () => {
-  const [wc, c, k, ga, gsc] = await Promise.all(
-    ['whatconverts-leads.csv', 'google-ads-campaigns.csv', 'google-ads-keywords.csv', 'ga4-sessions.json', 'search-console-queries.json']
+  const [wc, c, k, ga, gsc, gbp] = await Promise.all(
+    ['whatconverts-leads.csv', 'google-ads-campaigns.csv', 'google-ads-keywords.csv', 'ga4-sessions.json',
+      'search-console-queries.json', 'business-profile.json']
       .map(f => fetch(`samples/${f}`).then(r => r.text())));
   state.leads = parseWhatConvertsCSV(wc);
   state.adsCampaigns = parseAdsCSV(c).rows;
   state.adsKeywords = parseAdsCSV(k).rows;
   state.ga = JSON.parse(ga).map(gaRecord);
   state.gsc = JSON.parse(gsc).map(gscRecord);
+  state.gbp = JSON.parse(gbp).map(gbpRecord);
   state.source = 'sample data';
   state.synced = null;
   render();
 });
 
 $('clearBtn').addEventListener('click', () => {
-  Object.assign(state, { leads: [], adsCampaigns: [], adsKeywords: [], ga: [], gsc: [], source: '', synced: null });
+  Object.assign(state, { leads: [], adsCampaigns: [], adsKeywords: [], ga: [], gsc: [], gbp: [], source: '', synced: null });
   state.open.clear();
   $('leadsCard').hidden = true;
   render();
 });
 
 const isoDaysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
-const anyApi = () => !!state.api && ['whatconverts', 'googleAds', 'ga4', 'searchConsole'].some(k => state.api[k]);
+const anyApi = () => !!state.api && ['whatconverts', 'googleAds', 'ga4', 'searchConsole', 'businessProfile'].some(k => state.api[k]);
 
 async function sync({ fresh = false } = {}) {
   if (!$('from').value) $('from').value = isoDaysAgo(30);
@@ -93,7 +97,7 @@ async function sync({ fresh = false } = {}) {
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || res.statusText);
     for (const e of body.errors || []) message(e, 'error');
-    for (const k of ['leads', 'adsCampaigns', 'adsKeywords', 'ga', 'gsc']) if (body[k]) state[k] = body[k];
+    for (const k of ['leads', 'adsCampaigns', 'adsKeywords', 'ga', 'gsc', 'gbp']) if (body[k]) state[k] = body[k];
     state.synced = { from, to };
     const at = body.syncedAt ? new Date(body.syncedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
     state.source = `live APIs, ${from} → ${to}${at ? ` (as of ${at})` : ''}`;
@@ -135,7 +139,7 @@ async function loadStatus() {
   return state.api;
 }
 
-let accounts = null; // GA4 properties / GSC sites for the pickers, fetched once per connect
+let accounts = null; // GA4 properties / GSC sites / GBP locations for the pickers, fetched once per connect
 
 async function renderConnections(loadAccounts = false) {
   const s = state.api;
@@ -154,27 +158,31 @@ async function renderConnections(loadAccounts = false) {
       : `Add ${g.adsMissing.join(' and ')} to .env`),
     row('Google Analytics 4', s.ga4, s.ga4 ? `Property ${esc(g.ga4PropertyId)}` : g.connected ? 'Choose a property below' : 'Connect Google below'),
     row('Search Console', s.searchConsole, s.searchConsole ? esc(g.gscSiteUrl) : g.connected ? 'Choose a site below' : 'Connect Google below'),
+    row('Business Profile', s.businessProfile, s.businessProfile
+      ? esc(g.gbpLocations.map(l => l.title).join(', '))
+      : g.connected ? 'Choose locations below' : 'Connect Google below'),
   ].join('');
 
   if (!g.clientConfigured) {
-    $('googleSetup').innerHTML = `<p>To connect Google Ads, Analytics and Search Console, add <code>GOOGLE_CLIENT_ID</code> and
+    $('googleSetup').innerHTML = `<p>To connect Google Ads, Analytics, Search Console and Business Profile, add <code>GOOGLE_CLIENT_ID</code> and
       <code>GOOGLE_CLIENT_SECRET</code> to <code>.env</code> and restart the server. The README walks through it.</p>`;
     return;
   }
   if (!g.connected) {
-    $('googleSetup').innerHTML = `<p>Sign in with a Google account that has access to the Ads account, the GA4 property and the Search Console site.</p>
+    $('googleSetup').innerHTML = `<p>Sign in with a Google account that has access to the Ads account, the GA4 property,
+      the Search Console site and the Business Profile.</p>
       <a class="btn primary" href="/auth/google">Connect Google</a>`;
     return;
   }
   if (loadAccounts || !accounts) {
-    $('googleSetup').innerHTML = '<p class="dim">Loading your Google Analytics properties and Search Console sites…</p>';
+    $('googleSetup').innerHTML = '<p class="dim">Loading your Analytics properties, Search Console sites and Business Profile locations…</p>';
     try {
       const res = await fetch('/api/google/accounts');
       accounts = await res.json();
       if (!res.ok) throw new Error(accounts.error || res.statusText);
       for (const e of accounts.errors || []) message(e, 'error');
     } catch (err) {
-      accounts = { ga4Properties: [], gscSites: [] };
+      accounts = { ga4Properties: [], gscSites: [], gbpLocations: [] };
       message(`Could not list Google accounts: ${err.message}`, 'error');
     }
   }
@@ -183,6 +191,9 @@ async function renderConnections(loadAccounts = false) {
     return `<option value="">${label}</option>` + list.map(i =>
       `<option value="${esc(i.id)}" ${i.id === selected ? 'selected' : ''}>${esc(i.name)}</option>`).join('');
   };
+  const chosenGbp = new Set(g.gbpLocations.map(l => l.id));
+  const gbpChoices = [...(accounts.gbpLocations || [])];
+  for (const l of g.gbpLocations) if (!gbpChoices.some(c => c.id === l.id)) gbpChoices.push(l);
   $('googleSetup').innerHTML = `
     <p>Signed in to Google${g.email ? ` as <b>${esc(g.email)}</b>` : ''}.
       ${g.viaEnv ? '<span class="dim">(using the refresh token in .env)</span>' : '<button id="disconnectGoogle" class="btn small ghost">Disconnect</button>'}
@@ -192,12 +203,22 @@ async function renderConnections(loadAccounts = false) {
         <select id="ga4Pick">${options(accounts.ga4Properties, g.ga4PropertyId, 'Not used')}</select></label>
       <label>Search Console site
         <select id="gscPick">${options(accounts.gscSites.map(u => ({ id: u, name: u })), g.gscSiteUrl, 'Not used')}</select></label>
-      <button id="saveGoogle" class="btn primary">Save &amp; sync</button>
-    </div>`;
+    </div>
+    <fieldset class="gbp-pick">
+      <legend>Business Profile locations</legend>
+      ${gbpChoices.length ? gbpChoices.map(l => `<label class="check"><input type="checkbox" value="${esc(l.id)}" data-title="${esc(l.title)}"
+        ${chosenGbp.has(l.id) ? 'checked' : ''}> ${esc(l.title)}</label>`).join('')
+        : '<span class="dim">No locations found for this Google account.</span>'}
+    </fieldset>
+    <button id="saveGoogle" class="btn primary">Save &amp; sync</button>`;
   $('saveGoogle').addEventListener('click', async () => {
     const res = await fetch('/api/settings', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ga4PropertyId: $('ga4Pick').value, gscSiteUrl: $('gscPick').value }),
+      body: JSON.stringify({
+        ga4PropertyId: $('ga4Pick').value,
+        gscSiteUrl: $('gscPick').value,
+        gbpLocations: [...document.querySelectorAll('.gbp-pick input:checked')].map(i => ({ id: i.value, title: i.dataset.title })),
+      }),
     });
     if (!res.ok) return message(`Could not save: ${(await res.json().catch(() => ({}))).error || res.statusText}`, 'error');
     state.api = await res.json();
@@ -206,7 +227,7 @@ async function renderConnections(loadAccounts = false) {
     if (anyApi()) sync({ fresh: true });
   });
   $('disconnectGoogle')?.addEventListener('click', async () => {
-    if (!confirm('Disconnect Google? Ads, Analytics and Search Console will stop syncing until you connect again.')) return;
+    if (!confirm('Disconnect Google? Ads, Analytics, Search Console and Business Profile will stop syncing until you connect again.')) return;
     const res = await fetch('/api/google/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     if (res.ok) state.api = await res.json();
     accounts = null;
@@ -234,17 +255,20 @@ function render() {
       `${state.adsCampaigns.length.toLocaleString()} campaign rows · ${state.adsKeywords.length.toLocaleString()} keyword rows` +
       (state.ga.length ? ` · ${state.ga.length.toLocaleString()} GA4 rows` : '') +
       (state.gsc.length ? ` · ${state.gsc.length.toLocaleString()} Search Console rows` : '') +
+      (state.gbp.length ? ` · ${state.gbp.length.toLocaleString()} Business Profile rows` : '') +
       ((options.from || options.to) && (state.adsCampaigns.length || state.adsKeywords.length) && !datedAds
         ? ' · Note: the Google Ads export has no Day column, so the date filter only applies to leads.' : '')
     : '';
 
   const organic = state.gsc.length ? organicQueries({ ...state, options, keyword: $('keywordQ').value }) : null;
-  renderKpis(sumRows(rows), report.unattributed, organic, options);
+  const gbp = state.gbp.length ? businessProfileSummary({ ...state, options }) : null;
+  renderKpis(sumRows(rows), report.unattributed, organic, gbp, options);
   renderTable(rows);
   renderOrganic(organic);
+  renderBusinessProfile(gbp);
 }
 
-function renderKpis(t, unattributed, organic, options) {
+function renderKpis(t, unattributed, organic, gbp, options) {
   const kpi = (label, value, note = '') =>
     `<div class="kpi"><div class="label">${label}</div><div class="value">${value}</div>${note ? `<div class="note">${note}</div>` : ''}</div>`;
   const gap = t.metrics.convGap;
@@ -264,6 +288,9 @@ function renderKpis(t, unattributed, organic, options) {
     })() : '',
     organic ? kpi('Organic clicks (Search Console)', num(organic.totals.clicks),
       `${num(organic.totals.impressions)} impr. · ${organic.totals.organicLeads} organic WC leads`) : '',
+    gbp ? kpi('Business Profile actions', num(gbp.totals.calls + gbp.totals.websiteClicks + gbp.totals.directions),
+      `${num(gbp.totals.calls)} calls · ${num(gbp.totals.websiteClicks)} site · ${num(gbp.totals.directions)} directions · ` +
+      `${gbp.wcLeads.length} WC leads`) : '',
   ].join('');
 }
 
@@ -370,6 +397,23 @@ function renderOrganic(organic) {
     <td>${q.paid ? money(q.paid.cost) : '<span class="dim">—</span>'}</td>
     <td>${q.paid ? num(q.paid.clicks) : '<span class="dim">—</span>'}</td></tr>`).join('');
 }
+function renderBusinessProfile(gbp) {
+  $('gbpCard').hidden = !gbp;
+  if (!gbp) return;
+  $('gbpNote').innerHTML = gbp.wcLeads.length
+    ? `<a class="leads-link" id="gbpLeads">${gbp.wcLeads.length} WhatConverts lead${gbp.wcLeads.length > 1 ? 's' : ''}</a> tagged as Business Profile`
+    : 'No WhatConverts leads tagged as Business Profile';
+  $('gbpLeads')?.addEventListener('click', () => showLeads('Business Profile', gbp.wcLeads));
+  const row = (name, r, cls = '') => `<tr class="${cls}">
+    <td class="name">${esc(name)}</td>
+    <td>${num(r.impressions)}</td>
+    <td>${num(r.calls)}</td>
+    <td>${num(r.websiteClicks)}</td>
+    <td>${num(r.directions)}</td></tr>`;
+  $('gbp').querySelector('tbody').innerHTML = gbp.locations.map(l => row(l.name, l)).join('')
+    + (gbp.locations.length > 1 ? row('All locations', gbp.totals, 'total') : '');
+}
+
 $('organicMore').addEventListener('click', () => { state.organicAll = !state.organicAll; render(); });
 
 $('expandAll').addEventListener('click', () => {
