@@ -39,8 +39,8 @@ Copy `.env.example` to `.env`, fill in the steps below, then `npm start` and ope
 
 One Google sign-in covers all three.
 
-1. In the [Google Cloud console](https://console.cloud.google.com/), create or pick a project and enable the **Google Ads API**, **Google Analytics Data API**, **Google Analytics Admin API** and **Google Search Console API**.
-2. **APIs & Services → OAuth consent screen**: set it up (Internal if you use Google Workspace; otherwise External, and **publish** it, because refresh tokens for apps left in "Testing" expire after 7 days).
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a project (**Location: No organization** is fine; you don't need a Cloud organization) and enable the **Google Ads API**, **Google Analytics Data API**, **Google Analytics Admin API** and **Google Search Console API**.
+2. **APIs & Services → OAuth consent screen** (shown as **Google Auth Platform**): choose **Internal** if your account is on Google Workspace with an organization, otherwise **External**. For External, open **Audience → Publish app**, because refresh tokens for apps left in "Testing" expire after 7 days. You don't need Google's app verification for your own use: on first sign-in Google shows "Google hasn't verified this app"; click **Advanced → Go to (app name)**.
 3. **Credentials → Create credentials → OAuth client ID → Web application**. Add this authorized redirect URI:
    `http://localhost:3000/auth/google/callback` (on a server, use your URL and set `PUBLIC_URL` to match).
 4. Put the client ID and secret in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
